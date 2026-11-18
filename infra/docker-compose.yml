@@ -1,0 +1,57 @@
+# ============================================================================
+# OPTIONAL / CURRENTLY UNUSED FOR LOCAL DEVELOPMENT
+# Local development uses a native PostgreSQL install (see infra/README.md and
+# infra/postgres/local-setup.sql). This file is kept for a possible future
+# containerized setup. (CI no longer uses it: backend integration tests run on PostgreSQL 18.)
+# Note: this variant names the database POSTGRES_DB (default "munim"), while the
+# native setup uses "munim_ai".
+# ============================================================================
+#
+# Munim AI PostgreSQL via Docker Compose.
+#
+# Usage (from the repository root):
+#   cp infra/.env.example infra/.env     # then replace every CHANGE_ME value
+#   docker compose -f infra/docker-compose.yml up -d --wait
+#
+# All credentials come from infra/.env (git-ignored). Compose refuses to start if any
+# required variable is missing (${VAR:?...}). PostgreSQL is published on the loopback
+# interface only, so it is not reachable from other machines.
+
+name: munim
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      # Bootstrap superuser: used only by the init script and for administration.
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:?set POSTGRES_SUPERUSER in infra/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?set POSTGRES_SUPERUSER_PASSWORD in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in infra/.env}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      # Consumed by init/01-roles.sh to create the migration and application roles.
+      MUNIM_OWNER_ROLE: ${MUNIM_OWNER_ROLE:-munim_owner}
+      MUNIM_OWNER_PASSWORD: ${MUNIM_OWNER_PASSWORD:?set MUNIM_OWNER_PASSWORD in infra/.env}
+      MUNIM_APP_ROLE: ${MUNIM_APP_ROLE:-munim_app}
+      MUNIM_APP_PASSWORD: ${MUNIM_APP_PASSWORD:?set MUNIM_APP_PASSWORD in infra/.env}
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      # Loopback only. Default 5433 avoids clashing with a locally installed PostgreSQL on 5432.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - munim_pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    shm_size: 256mb
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  munim_pgdata:
+    name: munim_pgdata
