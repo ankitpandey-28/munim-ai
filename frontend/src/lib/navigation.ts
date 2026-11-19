@@ -28,10 +28,16 @@ export const appRoutes = {
     description: "Itemized and unitemized sales with cash, UPI and udhaar portions.",
     phase: 3,
   },
+  catalog: {
+    href: "/catalog",
+    labelKey: "nav.catalog",
+    description: "Products, categories, prices and other names used for search and voice.",
+    phase: 3,
+  },
   inventory: {
     href: "/inventory",
     labelKey: "nav.inventory",
-    description: "Products, stock levels, stock movements and stock counts.",
+    description: "Stock levels, stock movements and stock counts.",
     phase: 3,
   },
   customers: {

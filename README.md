@@ -18,7 +18,8 @@ Munim AI is a responsive **web application** that lets small shopkeepers manage 
 | 2.5 | Idempotency, business-transaction framework, audit log | ✅ Verified |
 | 2.6 | Frontend foundation (auth pages, shell, shops, profile, settings, i18n) | ✅ Verified (build, lint, types, unit tests, E2E) |
 | 2.7–2.8 | Integration, hardening, full test suite | ✅ Verified locally; CI not yet run |
-| 3a | Catalogue API: units, categories, products, search, aliases, price history ([docs/api.md](docs/api.md#catalogue-catalog)) | ✅ Verified (backend; no UI yet) |
+| 3a | Catalogue API: units, categories, products, search, aliases, price history ([docs/api.md](docs/api.md#catalogue-catalog)) | ✅ Verified (backend) |
+| 3A | Catalogue screens: `/catalog`, `/catalog/[productId]`, `/catalog/categories` | ✅ Verified (unit, scripted E2E, Playwright) |
 | 3 | Inventory, customers, udhaar/payments, sales, approvals | ⏳ Next |
 | 4 | Expenses, suppliers, purchase orders, business summary, reminders | ⏳ |
 | 5 | Voice assistant | ⏳ |
@@ -106,7 +107,8 @@ The browser talks only to `http://localhost:3000`; `/api/v1/*` is forwarded to t
 |---|---|---|
 | backend | `.venv\Scripts\ruff check .` and `.venv\Scripts\ruff format --check .` | lint and format |
 | backend | `.venv\Scripts\pytest` | 365 tests. Integration tests start a **disposable** PostgreSQL 18 cluster with `initdb` (never your database). Set `MUNIM_PG_BIN` if PostgreSQL isn't in `C:\Program Files\PostgreSQL\18\bin` |
-| frontend | `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` | ESLint, TypeScript, Vitest (23 tests), production build |
+| frontend | `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` | ESLint, TypeScript, Vitest (61 tests), production build |
+| backend + frontend | 1. `backend`: `.venv\Scripts\python -m scripts.e2e_stack` 2. `frontend`: `npm run build` then `npx next start -p 3000 -H 127.0.0.1` 3. `frontend`: `npm run e2e` (and optionally `backend`: `.venv\Scripts\python -m scripts.e2e_catalog`) | Browser tests (Playwright, installed Edge) against a **disposable** database + API; nothing touches `munim_ai`. Stop the stack with Ctrl+C |
 
 Verify the database roles any time with [infra/postgres/verify-roles.sql](infra/postgres/verify-roles.sql) (as `munim_app`) and `alembic check`.
 

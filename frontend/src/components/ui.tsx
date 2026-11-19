@@ -2,7 +2,7 @@
 
 /** Small, accessible UI primitives. Large touch targets (>= 48px) for shop-counter use. */
 
-import { useId } from "react";
+import { useId, useState } from "react";
 
 export function Button({
   children,
@@ -82,10 +82,12 @@ export function TextField({
 export function SelectField({
   label,
   options,
+  error,
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   options: { value: string; label: string }[];
+  error?: string;
 }) {
   const id = useId();
   return (
@@ -96,7 +98,11 @@ export function SelectField({
       <select
         id={id}
         {...props}
-        className="min-h-12 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-900"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`min-h-12 rounded-lg border bg-white px-3 py-2 text-base dark:bg-zinc-900 ${
+          error ? "border-red-600" : "border-zinc-300 dark:border-zinc-700"
+        }`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -104,6 +110,11 @@ export function SelectField({
           </option>
         ))}
       </select>
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-sm text-red-700 dark:text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -166,11 +177,108 @@ export function EmptyState({
   );
 }
 
-export function Card({ title, children }: { title?: string; children: React.ReactNode }) {
+export function Card({
+  title,
+  action,
+  children,
+}: {
+  title?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-      {title && <h2 className="mb-4 text-lg font-semibold">{title}</h2>}
+    <section className="rounded-xl border border-zinc-200 p-4 sm:p-5 dark:border-zinc-800">
+      {(title || action) && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          {title && <h2 className="text-lg font-semibold">{title}</h2>}
+          {action}
+        </div>
+      )}
       {children}
     </section>
+  );
+}
+
+export function CheckboxField({
+  label,
+  hint,
+  error,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & { label: string; hint?: string; error?: string }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className="flex min-h-12 cursor-pointer items-center gap-3 text-base">
+        <input id={id} type="checkbox" {...props} className="h-5 w-5 accent-emerald-700" aria-invalid={error ? true : undefined} />
+        <span>{label}</span>
+      </label>
+      {hint && !error && <p className="text-xs text-zinc-500">{hint}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "warn" | "good" }) {
+  const styles = {
+    neutral: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200",
+    warn: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+    good: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+  }[tone];
+  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles}`}>{children}</span>;
+}
+
+/**
+ * Two-step inline confirmation for important actions (archive, price change). Uses no browser
+ * dialogs: the first press reveals the question with explicit Confirm / Cancel buttons.
+ */
+export function ConfirmAction({
+  label,
+  question,
+  confirmLabel,
+  cancelLabel,
+  onConfirm,
+  variant = "danger",
+  busy = false,
+}: {
+  label: string;
+  question: React.ReactNode;
+  confirmLabel: string;
+  cancelLabel: string;
+  onConfirm: () => void | Promise<void>;
+  variant?: "danger" | "primary";
+  busy?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <Button type="button" variant={variant === "danger" ? "secondary" : "primary"} onClick={() => setOpen(true)} className={variant === "danger" ? "text-red-700 dark:text-red-400" : ""}>
+        {label}
+      </Button>
+    );
+  }
+  return (
+    <div role="group" aria-label={label} className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+      <div>{question}</div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={variant}
+          loading={busy}
+          onClick={async () => {
+            await onConfirm();
+            setOpen(false);
+          }}
+        >
+          {confirmLabel}
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
+          {cancelLabel}
+        </Button>
+      </div>
+    </div>
   );
 }

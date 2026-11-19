@@ -40,6 +40,8 @@ select = ["E", "W", "F", "I", "B", "UP", "S", "SIM", "RUF", "ASYNC"]
 [tool.ruff.lint.per-file-ignores]
 # Tests use fake secrets on purpose (redaction tests) and plain asserts.
 "tests/**" = ["S101", "S105", "S106", "S311", "S603", "S607", "S608", "SIM117"]
+# Developer tooling: runs fixed local executables (alembic/uvicorn) from the venv.
+"scripts/**" = ["S603"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

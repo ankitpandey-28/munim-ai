@@ -97,7 +97,9 @@ describe("api client", () => {
   it("user-facing messages are translated for known codes", () => {
     const t = (key: Parameters<typeof translate>[1]) => translate("hinglish", key);
     expect(errorMessage(new ApiError(0, "NETWORK_ERROR", "x"), t)).toBe(translate("hinglish", "error.network"));
-    expect(errorMessage(new ApiError(403, "PERMISSION_DENIED", "Not allowed."), t)).toBe("Not allowed.");
+    expect(errorMessage(new ApiError(403, "PERMISSION_DENIED", "Not allowed."), t)).toBe(translate("hinglish", "error.permission"));
+    // Unmapped codes fall back to the backend's safe message.
+    expect(errorMessage(new ApiError(409, "SOME_NEW_CODE", "Backend message."), t)).toBe("Backend message.");
     expect(errorMessage(new Error("boom"), t)).toBe(translate("hinglish", "error.generic"));
   });
 });
