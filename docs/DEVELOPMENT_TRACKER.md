@@ -72,3 +72,12 @@ Decision (stakeholder): for each module build the backend API **and** the screen
 - PR #1 (`feat/phase-3-catalog`): CI green (backend, frontend, secret scan) after fixes `8613d77`, `667c4d9`, `8dc3336`, `ac8bd1e`.
 - `feat/phase-4-inventory` (stacked on PR #1): catalogue completion — migration `0004` `products.track_stock` (D-08; backward compatible; **not applied to the real `munim_ai`** — back up first), UNIT_LOCKED / STOCK_NOT_ZERO guards (D-12), track-stock + other-names-on-create in the UI, Punjabi dictionary (`frontend/src/lib/i18n/pa.ts`), Noto Sans Devanagari/Gurmukhi fonts. Verified: pytest 367, Vitest 63, lint/types/build, Playwright 6/6.
 - Next: inventory API (opening stock, receipts, adjustments, counts, reversals via ledger handlers with D-11/D-12, low stock, valuation hidden from staff) + inventory screens + guard tests for UNIT_LOCKED/STOCK_NOT_ZERO.
+
+### Incident 2026-11-19 ~12:19 UTC — browser tests reached the real database
+
+A dev server (`uvicorn --reload`, real `munim_ai`) was already on :8000; the disposable stack's API could not bind, the health check was answered by the dev server, and one Playwright run went there. Read-only check: **10 users "E2E Owner" (12:19:32–12:20:30 UTC), 10 empty shops, 10 memberships, 10 sessions** (+ registration audit rows/idempotency keys); 0 products/categories/transactions. Nothing deleted (awaiting decision). Fixed in `7dcc48d` (stack refuses a busy port). That run's results are void.
+
+Pending on the stakeholder:
+1. Superuser backup of `munim_ai` (owner dumps fail under FORCE RLS; README updated). Then apply migration `0004` (SQL reviewed: `backups/migration_0004.sql`). Until then the dev server's catalogue endpoints return 500 because it auto-reloaded code expecting `products.track_stock`.
+2. Free port 8000, then re-run Playwright; commit the inventory screens (uncommitted: typecheck/lint/Vitest 71/build pass).
+3. Decide whether to remove the 10 test accounts/shops.
