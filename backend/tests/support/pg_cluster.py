@@ -88,7 +88,7 @@ class TempPostgres:
 
     def psql(self, *args: str, database: str = "postgres", check: bool = True):
         env = {**os.environ, "PGPASSWORD": self.superuser_password, "PGCLIENTENCODING": "UTF8"}
-        return subprocess.run(
+        result = subprocess.run(
             [
                 self._exe("psql"),
                 "-X",
@@ -108,8 +108,15 @@ class TempPostgres:
             env=env,
             capture_output=True,
             text=True,
-            check=check,
+            check=False,
         )
+        if check and result.returncode != 0:
+            # Show psql's own error; never echo the command line (it carries throwaway passwords).
+            raise RuntimeError(
+                f"psql failed (exit {result.returncode}):\n{result.stderr[-4000:]}"
+                f"\n{result.stdout[-2000:]}"
+            )
+        return result
 
     def start(self) -> TempPostgres:
         pwfile = self.workdir / "su.pw"
