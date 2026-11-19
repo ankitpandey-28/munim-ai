@@ -155,7 +155,9 @@ Roles are held per shop through memberships **[DECIDED: multi-shop data model]**
 | Record udhaar payment / allocation | ✅ | ✅ | ❌ |
 | Approve/reject staff requests | ✅ | ❌ | ❌ |
 | View customer balances | ✅ | ✅ | ❌ |
-| Add/edit products and prices | ✅ | ⚙️ configurable | ❌ |
+| View products, categories, aliases, selling prices | ✅ | ✅ | ❌ |
+| Add/edit/archive products and categories; manage aliases; change prices | ✅ | ❌ (Phase 3 decision; was "configurable") | ❌ |
+| View cost prices and cost-price history | ✅ | ❌ | ❌ |
 | Stock adjustment / stock count | ✅ | ❌ | ❌ |
 | Record expense | ✅ | ⚙️ configurable | ❌ |
 | Create/send purchase orders, receive goods | ✅ | ⚙️ configurable (receive allowed by default) | ❌ |
@@ -168,6 +170,8 @@ Roles are held per shop through memberships **[DECIDED: multi-shop data model]**
 | Suspend shop | ❌ | ❌ | ✅ |
 
 All permissions are enforced on the backend. The voice assistant acts with exactly the logged-in user's permissions.
+
+> **Implemented catalogue permissions (Phase 3, approved 2026-11-19):** owners **and admins** (the role added in Phase 2) have full catalogue access, including cost prices and price changes; staff can view only, never cost prices. Per-member overrides ("configurable") aren't implemented. See [api.md](api.md#role-permissions).
 
 ---
 

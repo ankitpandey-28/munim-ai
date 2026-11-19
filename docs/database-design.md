@@ -48,6 +48,10 @@ The physical schema ([physical-schema.md](physical-schema.md)) implements this d
 | RLS context | `app_current_shop_id()` / `app_current_user_id()` functions over transaction-local settings, `NULLIF(..., '')` so empty means no access |
 | Circular FKs | `business_transactions ↔ approval_requests ↔ pending_actions`, `voice_sessions → pending_actions`, `users → shops` are created after all tables |
 | Document numbers | `sales.sale_number` and `purchase_orders.po_number` are `bigint`, unique per shop; the allocation mechanism is designed in Phase 3 (Q-24) |
+| `product_prices` (Phase 3) | Also records each product's **initial** selling price (and cost price, if given) at creation, not only later changes. Later rows are appended only when a value actually changes; prices change only through the dedicated price endpoint |
+| `product_aliases.normalized_text` (Phase 3) | Produced by `app/shared/text.py`: NFKC, case-fold, symbols/punctuation → spaces, Indic vowel signs kept, Indic digits → ASCII. No transliteration; `phonetic_key` stays NULL until the voice phase. Aliases are unique per product (two products may share an alias) |
+| Product barcodes (Phase 3) | The unique index covers archived products too, so an archived product's barcode stays reserved (approved rule); the API returns 409 `BARCODE_RESERVED_BY_ARCHIVED` |
+| Categories (Phase 3) | `product_categories` has no `version` column: category edits are last-write-wins. A category can't be archived while active products use it |
 
 ## 1. Design principles
 

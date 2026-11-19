@@ -40,6 +40,9 @@ npm-debug.log*
 *.db
 *.dump
 *.sql
+# Schema/role setup scripts are source code, not data dumps:
+!infra/postgres/local-setup.sql
+!infra/postgres/verify-roles.sql
 pgdata/
 
 # ---------- Editors / OS ----------

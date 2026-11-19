@@ -88,7 +88,7 @@ class TempPostgres:
 
     def psql(self, *args: str, database: str = "postgres", check: bool = True):
         env = {**os.environ, "PGPASSWORD": self.superuser_password, "PGCLIENTENCODING": "UTF8"}
-        return subprocess.run(
+        result = subprocess.run(
             [
                 self._exe("psql"),
                 "-X",
@@ -108,8 +108,15 @@ class TempPostgres:
             env=env,
             capture_output=True,
             text=True,
-            check=check,
+            check=False,
         )
+        if check and result.returncode != 0:
+            # Show psql's own error; never echo the command line (it carries throwaway passwords).
+            raise RuntimeError(
+                f"psql failed (exit {result.returncode}):\n{result.stderr[-4000:]}"
+                f"\n{result.stdout[-2000:]}"
+            )
+        return result
 
     def start(self) -> TempPostgres:
         pwfile = self.workdir / "su.pw"
@@ -134,7 +141,15 @@ class TempPostgres:
         )
         pwfile.unlink()
         log = self.workdir / "server.log"
-        subprocess.run(
+        options = (
+            f"-p {self.port} -c listen_addresses=127.0.0.1 -c fsync=off "
+            "-c synchronous_commit=off -c full_page_writes=off"
+        )
+        if os.name != "nt":
+            # Debian/Ubuntu builds default the Unix socket to /var/run/postgresql, which only the
+            # postgres OS user may write; keep this throwaway cluster's socket in its own dir.
+            options += f" -c unix_socket_directories={self.workdir}"
+        result = subprocess.run(
             [
                 self._exe("pg_ctl"),
                 "-D",
@@ -145,14 +160,16 @@ class TempPostgres:
                 "-t",
                 "60",
                 "-o",
-                f"-p {self.port} -c listen_addresses=127.0.0.1 -c fsync=off "
-                "-c synchronous_commit=off -c full_page_writes=off",
+                options,
                 "start",
             ],
-            check=True,
+            check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        if result.returncode != 0:
+            tail = log.read_text(encoding="utf-8", errors="replace")[-2000:] if log.exists() else ""
+            raise RuntimeError(f"disposable PostgreSQL failed to start:\n{tail}")
         self.started = True
         # Provision munim_ai + roles exactly as developers do (CI mode = throwaway passwords).
         self.psql(
