@@ -64,3 +64,11 @@ Known dev-only audit finding: vitest/tinypool advisories (fix = breaking vitest 
 ## Next task
 
 Phase 3A committed and pushed on `feat/phase-3-catalog` (PR #1). Next: check PR #1 CI, then Phase 4 inventory on `feat/phase-4-inventory` (starts with the `track_stock` migration, D-08).
+
+## Frontend master prompt (2026-11-19) — resume here
+
+Decision (stakeholder): for each module build the backend API **and** the screens, verified end to end; Punjabi UI added now (interface only, machine-drafted, needs native review). Order: catalogue completion → inventory → customers/udhaar → sales/POS → voice → dashboard/expenses/reports → suppliers → settings.
+
+- PR #1 (`feat/phase-3-catalog`): CI green (backend, frontend, secret scan) after fixes `8613d77`, `667c4d9`, `8dc3336`, `ac8bd1e`.
+- `feat/phase-4-inventory` (stacked on PR #1): catalogue completion — migration `0004` `products.track_stock` (D-08; backward compatible; **not applied to the real `munim_ai`** — back up first), UNIT_LOCKED / STOCK_NOT_ZERO guards (D-12), track-stock + other-names-on-create in the UI, Punjabi dictionary (`frontend/src/lib/i18n/pa.ts`), Noto Sans Devanagari/Gurmukhi fonts. Verified: pytest 367, Vitest 63, lint/types/build, Playwright 6/6.
+- Next: inventory API (opening stock, receipts, adjustments, counts, reversals via ledger handlers with D-11/D-12, low stock, valuation hidden from staff) + inventory screens + guard tests for UNIT_LOCKED/STOCK_NOT_ZERO.

@@ -8,6 +8,7 @@ import {
   formatQuantity,
   isValidBarcode,
   paiseToRupeeInput,
+  parseAliases,
   parseQuantity,
   parseRupeesToPaise,
   productQuery,
@@ -145,5 +146,13 @@ describe("catalogue error mapping", () => {
   });
   it("404s get a generic not-found message (no existence leak wording)", () => {
     expect(errorMessage(new ApiError(404, "NOT_FOUND", "Product not found."), t)).toBe(translate("en", "error.notFound"));
+  });
+});
+
+describe("parseAliases", () => {
+  it("splits, trims, drops blanks and removes case-insensitive duplicates", () => {
+    expect(parseAliases(" Cheeni, cheeni ,, Shakkar\nचीनी ")).toEqual(["Cheeni", "Shakkar", "चीनी"]);
+    expect(parseAliases("")).toEqual([]);
+    expect(parseAliases("  Toor   Dal ")).toEqual(["Toor Dal"]);
   });
 });

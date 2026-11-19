@@ -73,6 +73,7 @@ export function ProductDetail() {
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-xl font-semibold">{displayName(product, language)}</h2>
         {product.is_loose ? <Badge>{t("catalog.loose")}</Badge> : <Badge>{t("catalog.packaged")}</Badge>}
+        {!product.track_stock && <Badge>{t("catalog.untracked")}</Badge>}
         {archived && <Badge tone="warn">{t("catalog.archived")}</Badge>}
       </div>
       {archived && <Alert kind="info">{t("catalog.archivedNotice")}</Alert>}
@@ -110,6 +111,7 @@ export function ProductDetail() {
             <Detail label={t("catalog.field.unit")} value={unitLabel(unit, product.base_unit_code, language)} />
             <Detail label={t("catalog.field.reorderLevel")} value={product.reorder_level ? `${formatQuantity(product.reorder_level)} ${product.base_unit_code}` : "—"} />
             <Detail label={t("catalog.field.barcode")} value={product.barcode ?? "—"} />
+            <Detail label={t("catalog.field.trackStock")} value={t(product.track_stock ? "common.yes" : "common.no")} />
           </dl>
         )}
       </Card>

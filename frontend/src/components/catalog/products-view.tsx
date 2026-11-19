@@ -122,6 +122,7 @@ export function ProductsView() {
                       <p className="flex flex-wrap items-center gap-2 font-medium">
                         <span className="truncate">{displayName(p, language)}</span>
                         {p.is_loose ? <Badge>{t("catalog.loose")}</Badge> : null}
+                        {!p.track_stock ? <Badge>{t("catalog.untracked")}</Badge> : null}
                         {p.archived_at ? <Badge tone="warn">{t("catalog.archived")}</Badge> : null}
                       </p>
                       <p className="text-xs text-zinc-500">

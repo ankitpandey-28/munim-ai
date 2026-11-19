@@ -43,7 +43,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const language = useSyncExternalStore(subscribe, readStoredLanguage, () => DEFAULT_LANGUAGE);
 
   useEffect(() => {
-    document.documentElement.lang = language === "hi" ? "hi" : "en";
+    document.documentElement.lang = language === "hi" || language === "pa" ? language : "en";
   }, [language]);
 
   const setLanguage = useCallback((next: UiLanguage) => {

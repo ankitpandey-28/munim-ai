@@ -1,13 +1,16 @@
 /**
- * UI strings in English, Hinglish (Latin script) and Hindi (Devanagari). Punjabi UI is deferred
- * (SRS Q-20). Every language must define every key (checked by tests).
+ * UI strings in English, Hinglish (Latin script), Hindi (Devanagari) and Punjabi (Gurmukhi, in
+ * ./pa.ts; interface only until Punjabi voice is tested). Every language must define every key (checked by tests).
  * Metric labels follow BR-TERM-01: never "kamai".
  */
+
+import { pa } from "./pa";
 
 export const LANGUAGES = [
   { code: "en", label: "English" },
   { code: "hinglish", label: "Hinglish" },
   { code: "hi", label: "हिन्दी" },
+  { code: "pa", label: "ਪੰਜਾਬੀ" },
 ] as const;
 
 export type UiLanguage = (typeof LANGUAGES)[number]["code"];
@@ -22,6 +25,8 @@ const en = {
   "common.cancel": "Cancel",
   "common.retry": "Try again",
   "common.optional": "optional",
+  "common.yes": "Yes",
+  "common.no": "No",
   "common.language": "Language",
   "auth.login": "Log in",
   "auth.register": "Create account",
@@ -193,10 +198,19 @@ const en = {
   "error.categoryArchived": "This category is archived.",
   "error.alreadyArchived": "This is already archived.",
   "error.looseUnit": "Loose items need a unit that allows decimals (kg, g, litre, ml).",
+  "catalog.untracked": "Stock not tracked",
+  "catalog.field.trackStock": "Track stock",
+  "catalog.field.trackStockHint": "Turn off for items you don't count, like loose vegetables. They can still be sold.",
+  "catalog.field.aliasesNew": "Other names",
+  "catalog.field.aliasesNewHint": "Names customers use, separated by commas. Example: Cheeni, Shakkar",
+  "catalog.aliasesFailed": "These other names could not be added (add them on the product page):",
+  "error.aliasLength": "Each other name can be at most 120 characters.",
+  "error.unitLocked": "The unit can't change after stock has been recorded for this product.",
+  "error.stockNotZero": "Stock tracking can only be turned off when stock is zero. Do a stock count first.",
 } as const;
 
 export type MessageKey = keyof typeof en;
-type Dictionary = Record<MessageKey, string>;
+export type Dictionary = Record<MessageKey, string>;
 
 const hinglish: Dictionary = {
   "app.name": "Munim AI",
@@ -208,6 +222,8 @@ const hinglish: Dictionary = {
   "common.cancel": "Cancel",
   "common.retry": "Phir se try karein",
   "common.optional": "zaroori nahi",
+  "common.yes": "Haan",
+  "common.no": "Nahi",
   "common.language": "Bhasha",
   "auth.login": "Login karein",
   "auth.register": "Account banayein",
@@ -379,6 +395,15 @@ const hinglish: Dictionary = {
   "error.categoryArchived": "Yeh category archived hai.",
   "error.alreadyArchived": "Yeh pehle se archived hai.",
   "error.looseUnit": "Khule saaman ke liye kg, g, litre ya ml chunein.",
+  "catalog.untracked": "Stock track nahi hota",
+  "catalog.field.trackStock": "Stock track karein",
+  "catalog.field.trackStockHint": "Jo saaman aap ginte nahi (jaise khuli sabzi), uske liye band karein. Bikri phir bhi hogi.",
+  "catalog.field.aliasesNew": "Doosre naam",
+  "catalog.field.aliasesNewHint": "Grahak jo naam bolte hain, comma se alag karein. Jaise: Cheeni, Shakkar",
+  "catalog.aliasesFailed": "Ye doosre naam nahi jud paaye (product page par jodein):",
+  "error.aliasLength": "Har doosra naam zyada se zyada 120 akshar ka ho sakta hai.",
+  "error.unitLocked": "Stock darj hone ke baad is product ki unit nahi badal sakti.",
+  "error.stockNotZero": "Stock zero hone par hi tracking band ho sakti hai. Pehle stock ginti karein.",
 };
 
 const hi: Dictionary = {
@@ -391,6 +416,8 @@ const hi: Dictionary = {
   "common.cancel": "रद्द करें",
   "common.retry": "फिर से कोशिश करें",
   "common.optional": "ज़रूरी नहीं",
+  "common.yes": "हाँ",
+  "common.no": "नहीं",
   "common.language": "भाषा",
   "auth.login": "लॉगिन करें",
   "auth.register": "खाता बनाएं",
@@ -562,9 +589,18 @@ const hi: Dictionary = {
   "error.categoryArchived": "यह श्रेणी आर्काइव है।",
   "error.alreadyArchived": "यह पहले से आर्काइव है।",
   "error.looseUnit": "खुले सामान के लिए kg, g, लीटर या ml चुनें।",
+  "catalog.untracked": "स्टॉक ट्रैक नहीं होता",
+  "catalog.field.trackStock": "स्टॉक ट्रैक करें",
+  "catalog.field.trackStockHint": "जो सामान आप गिनते नहीं (जैसे खुली सब्ज़ी), उसके लिए बंद करें। बिक्री फिर भी होगी।",
+  "catalog.field.aliasesNew": "दूसरे नाम",
+  "catalog.field.aliasesNewHint": "ग्राहक जो नाम बोलते हैं, कॉमा से अलग करें। जैसे: चीनी, शक्कर",
+  "catalog.aliasesFailed": "ये दूसरे नाम नहीं जुड़ पाए (प्रोडक्ट पेज पर जोड़ें):",
+  "error.aliasLength": "हर दूसरा नाम ज़्यादा से ज़्यादा 120 अक्षर का हो सकता है।",
+  "error.unitLocked": "स्टॉक दर्ज होने के बाद इस प्रोडक्ट की यूनिट नहीं बदल सकती।",
+  "error.stockNotZero": "स्टॉक शून्य होने पर ही ट्रैकिंग बंद हो सकती है। पहले स्टॉक गिनती करें।",
 };
 
-export const dictionaries: Record<UiLanguage, Dictionary> = { en, hinglish, hi };
+export const dictionaries: Record<UiLanguage, Dictionary> = { en, hinglish, hi, pa };
 
 export function translate(language: UiLanguage, key: MessageKey): string {
   return dictionaries[language]?.[key] ?? en[key];

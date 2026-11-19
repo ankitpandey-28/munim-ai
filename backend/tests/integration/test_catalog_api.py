@@ -941,3 +941,37 @@ def test_failed_price_update_writes_no_history(owner, super_engine) -> None:
     assert [r.status_code for r in bad] == [409, 422, 422]
     assert count(super_engine, q, p=p["id"]) == before
     assert c.get(f"{CAT}/products/{p['id']}").json()["version"] == 1
+
+
+def test_track_stock_flag(owner, super_engine) -> None:
+    """D-08: products track stock by default; the flag can be set at creation and toggled."""
+    c = owner["client"]
+    tracked = prod(c, "Atta")
+    assert tracked["track_stock"] is True
+    loose_veg = prod(c, "Dhaniya", track_stock=False)
+    assert loose_veg["track_stock"] is False
+    upd = c.patch(
+        f"{CAT}/products/{loose_veg['id']}",
+        headers=_key(),
+        json={"version": 1, "track_stock": True},
+    )
+    assert upd.status_code == 200, upd.text
+    assert upd.json()["track_stock"] is True and upd.json()["version"] == 2
+    # Strict booleans; null is not a valid value
+    for bad in ("yes", None, 1):
+        r = c.patch(
+            f"{CAT}/products/{tracked['id']}",
+            headers=_key(),
+            json={"version": 1, "track_stock": bad},
+        )
+        assert r.status_code == 422, (bad, r.text)
+    # Audited like every other product field
+    with super_engine.connect() as conn:
+        after = conn.execute(
+            text(
+                "SELECT after->>'track_stock' FROM audit_logs "
+                "WHERE entity_id = :id AND action = 'product.updated'"
+            ),
+            {"id": loose_veg["id"]},
+        ).scalar_one()
+    assert after == "true"

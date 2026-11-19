@@ -241,6 +241,7 @@ class ProductCreate(_ProductFields):
     category_id: uuid.UUID | None = None
     base_unit_code: str
     is_loose: Annotated[bool, Strict()] = False
+    track_stock: Annotated[bool, Strict()] = True
     selling_price_paise: Paise
     default_cost_price_paise: Paise | None = None
     reorder_level: Quantity | None = None
@@ -260,6 +261,7 @@ class ProductUpdate(_ProductFields):
     category_id: uuid.UUID | None = None
     base_unit_code: str | None = None
     is_loose: Annotated[bool, Strict()] | None = None
+    track_stock: Annotated[bool, Strict()] | None = None
     reorder_level: Quantity | None = None
     barcode: str | None = None
 
@@ -272,7 +274,7 @@ class ProductUpdate(_ProductFields):
             )
         return data
 
-    @field_validator("is_loose", mode="before")
+    @field_validator("is_loose", "track_stock", mode="before")
     @classmethod
     def _is_loose_not_null(cls, value: Any) -> Any:
         if value is None:
@@ -297,6 +299,7 @@ class ProductRead(BaseModel):
     category_id: uuid.UUID | None
     base_unit_code: str
     is_loose: bool
+    track_stock: bool
     selling_price_paise: int
     default_cost_price_paise: int | None
     costs_visible: bool
@@ -316,6 +319,7 @@ class ProductRead(BaseModel):
             category_id=product.category_id,
             base_unit_code=product.base_unit_code,
             is_loose=product.is_loose,
+            track_stock=product.track_stock,
             selling_price_paise=product.selling_price_paise,
             default_cost_price_paise=product.default_cost_price_paise if include_costs else None,
             costs_visible=include_costs,
