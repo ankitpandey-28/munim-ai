@@ -8,6 +8,10 @@ everything. Business-module permissions (sales, udhaar, stock...) arrive with Ph
 Catalogue permissions (Phase 3, approved 2026-11-19): owners and admins have full catalogue
 access including cost visibility and price management; staff may only view products,
 categories, aliases and selling prices (never cost prices or cost history).
+
+Inventory permissions (Phase 4, D-10/D-12e): owners and admins do everything; staff may view
+quantities and movement history and record goods received, but never see costs or stock value,
+and cannot post opening stock, adjustments, counts or reversals.
 """
 
 from enum import StrEnum
@@ -25,6 +29,11 @@ class Permission(StrEnum):
     CATALOG_VIEW_COSTS = "catalog.view_costs"  # default cost price + cost price history
     CATALOG_MANAGE = "catalog.manage"  # create/edit/archive categories & products, aliases
     CATALOG_MANAGE_PRICES = "catalog.manage_prices"  # selling/cost price changes (+ history)
+    # Inventory (Phase 4; D-10, D-12e, SRS §3.2)
+    INVENTORY_VIEW = "inventory.view"  # quantities, low stock, movement history (no costs)
+    INVENTORY_VIEW_VALUE = "inventory.view_value"  # average cost, movement costs, stock value
+    INVENTORY_RECEIVE = "inventory.receive"  # record goods received (SRS: staff allowed)
+    INVENTORY_ADJUST = "inventory.adjust"  # opening stock, adjustments, counts, reversals
 
 
 ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
@@ -39,9 +48,20 @@ ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
             Permission.CATALOG_VIEW_COSTS,
             Permission.CATALOG_MANAGE,
             Permission.CATALOG_MANAGE_PRICES,
+            Permission.INVENTORY_VIEW,
+            Permission.INVENTORY_VIEW_VALUE,
+            Permission.INVENTORY_RECEIVE,
+            Permission.INVENTORY_ADJUST,
         }
     ),
-    "staff": frozenset({Permission.SHOP_VIEW, Permission.CATALOG_VIEW}),
+    "staff": frozenset(
+        {
+            Permission.SHOP_VIEW,
+            Permission.CATALOG_VIEW,
+            Permission.INVENTORY_VIEW,
+            Permission.INVENTORY_RECEIVE,
+        }
+    ),
 }
 
 
