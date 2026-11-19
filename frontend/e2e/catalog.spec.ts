@@ -50,6 +50,7 @@ test("owner manages categories, products, prices, aliases and archive through th
   await label("Cost price (₹)").fill((COST_PAISE / 100).toFixed(2));
   await label("Reorder level (kg)").fill("5");
   await page.getByRole("textbox", { name: /^Barcode/ }).filter({ visible: true }).fill("8901000000024");
+  await page.getByLabel("Other names", { exact: false }).filter({ visible: true }).first().fill("Shakkar, shakkar");
   await page.getByRole("button", { name: "Add product", exact: true }).click();
   await expect(page.getByText("Product added.")).toBeVisible();
   const list = page.getByTestId("product-list");
@@ -63,6 +64,7 @@ test("owner manages categories, products, prices, aliases and archive through th
   await label("New other name").fill("Cheeni");
   await page.getByRole("button", { name: "Add name" }).click();
   await expect(page.getByTestId("alias-list")).toContainText("Cheeni");
+  await expect(page.getByTestId("alias-list")).toContainText("Shakkar"); // added at creation (deduplicated)
 
   // Price change requires an explicit confirmation step
   await page.getByRole("button", { name: "Update prices" }).click();
@@ -173,4 +175,25 @@ test("another shop's product URL shows not-found, revealing nothing", async ({ b
 test("logged-out visitor is sent to login", async ({ page }) => {
   await page.goto("/catalog");
   await expect(page).toHaveURL(/\/login\?next=%2Fcatalog/);
+});
+
+test("untracked products are marked, and the catalogue works in Punjabi", async ({ page, context }) => {
+  await useEnglish(context);
+  await ownerWithShop(context.request);
+  await page.goto("/catalog");
+  await page.getByRole("button", { name: "+ Add product" }).click();
+  const label = (name: string) => page.getByLabel(name).filter({ visible: true });
+  await label("Product name").fill("Dhaniya");
+  await label("Selling price (₹)").fill("10");
+  await label("Track stock").uncheck();
+  await page.getByRole("button", { name: "Add product", exact: true }).click();
+  await expect(page.getByText("Product added.")).toBeVisible();
+  await expect(page.getByTestId("product-list")).toContainText("Stock not tracked");
+
+  // Switch the interface to Punjabi (Gurmukhi): labels change, data stays.
+  await page.getByLabel("Language").filter({ visible: true }).first().selectOption("pa");
+  await expect(page.getByRole("heading", { name: "ਸਾਮਾਨ ਅਤੇ ਸ਼੍ਰੇਣੀਆਂ" })).toBeVisible();
+  await expect(page.getByTestId("product-list")).toContainText("ਸਟਾਕ ਟਰੈਕ ਨਹੀਂ ਹੁੰਦਾ");
+  await expect(page.getByTestId("product-list")).toContainText("Dhaniya");
+  await expect(page.locator("html")).toHaveAttribute("lang", "pa");
 });

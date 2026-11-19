@@ -15,6 +15,7 @@ import argparse
 import os
 import secrets
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -41,11 +42,27 @@ def _wait_healthy(url: str, timeout: float = 60) -> None:
     raise RuntimeError(f"API did not become healthy at {url}")
 
 
+def _port_free(port: int) -> bool:
+    """True if nothing listens on 127.0.0.1:port. A server already there (for example a dev
+    server on the real database) would otherwise answer the health check and receive the
+    E2E traffic instead of this disposable stack."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(1)
+        return s.connect_ex(("127.0.0.1", port)) != 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
 
+    if not _port_free(args.port):
+        print(
+            f"Port {args.port} is already in use (another API?). Stop it or pass --port; "
+            "refusing to start so E2E traffic can never reach a non-disposable server.",
+            file=sys.stderr,
+        )
+        return 3
     bin_dir = find_pg_bin()
     if bin_dir is None:
         print("PostgreSQL binaries not found; set MUNIM_PG_BIN.", file=sys.stderr)
@@ -91,6 +108,9 @@ def main() -> int:
             env=env,
         )
         _wait_healthy(f"http://127.0.0.1:{args.port}/api/v1/health")
+        if api.poll() is not None:  # our API died (e.g. port taken meanwhile): not our server
+            print("disposable API exited during startup; aborting", file=sys.stderr)
+            return 1
         api_url = f"http://127.0.0.1:{args.port}"
         print(f"E2E stack ready: API {api_url} (disposable DB port {cluster.port})", flush=True)
         print(f"stop file: {stop_file}", flush=True)

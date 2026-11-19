@@ -49,12 +49,14 @@ from app.modules.catalog.schemas import (
     UnitListResponse,
     UnitRead,
 )
+from app.modules.inventory.models import InventoryLevel, StockMovement
 from app.modules.shops.context import ShopContext
 from app.modules.shops.permissions import Permission, has_permission
 from app.shared.text import normalize_text
 
 PRODUCT_AUDIT_FIELDS = (
-    "name", "name_hi", "category_id", "base_unit_code", "is_loose", "selling_price_paise",
+    "name", "name_hi", "category_id", "base_unit_code", "is_loose", "track_stock",
+    "selling_price_paise",
     "default_cost_price_paise", "reorder_level", "barcode", "archived_at", "version",
 )  # fmt: skip
 CATEGORY_AUDIT_FIELDS = ("name", "name_hi", "sort_order", "archived_at")
@@ -482,6 +484,36 @@ def list_products(db: Session, ctx: ShopContext, params: ProductListParams) -> P
     )
 
 
+def _check_stock_guards(db: Session, ctx: ShopContext, product: Product, changes: dict) -> None:
+    """Integrity rules once stock exists (D-12). The product row is already locked FOR UPDATE,
+    and inventory writes lock it FOR SHARE, so these checks cannot race a stock movement."""
+    if "base_unit_code" in changes:
+        has_movements = db.scalar(
+            select(
+                exists().where(
+                    StockMovement.shop_id == ctx.shop_id, StockMovement.product_id == product.id
+                )
+            )
+        )
+        if has_movements:
+            raise Conflict(
+                "The unit cannot change after stock has been recorded for this product.",
+                code="UNIT_LOCKED",
+            )
+    if changes.get("track_stock") is False:
+        on_hand = db.scalar(
+            select(InventoryLevel.quantity_on_hand).where(
+                InventoryLevel.shop_id == ctx.shop_id, InventoryLevel.product_id == product.id
+            )
+        )
+        if on_hand is not None and on_hand != 0:
+            raise Conflict(
+                "Stock tracking can only be turned off when the stock is zero. "
+                "Record a stock count first.",
+                code="STOCK_NOT_ZERO",
+            )
+
+
 def update_product(
     db: Session, ctx: ShopContext, product_id: uuid.UUID, data: ProductUpdate
 ) -> ProductRead:
@@ -510,6 +542,7 @@ def update_product(
         raise _product_name_taken()
     if "barcode" in changes:
         _check_barcode_free(db, ctx, changes["barcode"], product.id)
+    _check_stock_guards(db, ctx, product, changes)
     before = _snapshot(product, PRODUCT_AUDIT_FIELDS)
     with _unique_guard(db, PRODUCT_CONFLICTS):
         for field, value in changes.items():

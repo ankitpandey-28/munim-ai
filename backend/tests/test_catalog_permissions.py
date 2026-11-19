@@ -11,6 +11,14 @@ CATALOG = {
     Permission.CATALOG_MANAGE_PRICES,
 }
 
+INVENTORY = {
+    Permission.INVENTORY_VIEW,
+    Permission.INVENTORY_VIEW_VALUE,
+    Permission.INVENTORY_RECEIVE,
+    Permission.INVENTORY_ADJUST,
+}
+NEW_MODULES = CATALOG | INVENTORY
+
 # Permissions exactly as they were before Phase 3 (must not change).
 PRE_PHASE_3 = {
     "owner": {
@@ -54,8 +62,20 @@ def test_staff_can_only_view_catalog() -> None:
 
 @pytest.mark.parametrize("role", ["owner", "admin", "staff"])
 def test_pre_existing_permissions_unchanged(role: str) -> None:
-    non_catalog = {p for p in ROLE_PERMISSIONS[role] if p not in CATALOG}
-    assert non_catalog == PRE_PHASE_3[role]
+    pre_existing = {p for p in ROLE_PERMISSIONS[role] if p not in NEW_MODULES}
+    assert pre_existing == PRE_PHASE_3[role]
+
+
+@pytest.mark.parametrize("role", ["owner", "admin"])
+def test_owner_and_admin_have_full_inventory_access(role: str) -> None:
+    assert all(has_permission(role, p) for p in INVENTORY)  # D-10
+
+
+def test_staff_inventory_is_quantities_and_receiving_only() -> None:
+    assert has_permission("staff", Permission.INVENTORY_VIEW)
+    assert has_permission("staff", Permission.INVENTORY_RECEIVE)  # SRS §3.2 default
+    assert not has_permission("staff", Permission.INVENTORY_VIEW_VALUE)  # never costs (D-12e)
+    assert not has_permission("staff", Permission.INVENTORY_ADJUST)
 
 
 def test_unknown_role_has_no_catalog_access() -> None:

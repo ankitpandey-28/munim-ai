@@ -10,6 +10,7 @@ import {
   changedFields,
   displayName,
   isValidBarcode,
+  parseAliases,
   parseQuantity,
   parseRupeesToPaise,
 } from "@/lib/catalog";
@@ -24,6 +25,8 @@ interface FormState {
   category_id: string;
   base_unit_code: string;
   is_loose: boolean;
+  track_stock: boolean;
+  aliases: string;
   selling_price: string;
   cost_price: string;
   reorder_level: string;
@@ -38,6 +41,8 @@ function initialState(product: Product | null, units: Unit[]): FormState {
       category_id: product.category_id ?? "",
       base_unit_code: product.base_unit_code,
       is_loose: product.is_loose,
+      track_stock: product.track_stock,
+      aliases: "",
       selling_price: "",
       cost_price: "",
       reorder_level: product.reorder_level ? product.reorder_level.replace(/\.?0+$/, "") : "",
@@ -45,7 +50,7 @@ function initialState(product: Product | null, units: Unit[]): FormState {
     };
   }
   const defaultUnit = units.find((u) => u.code === "piece")?.code ?? units[0]?.code ?? "";
-  return { name: "", name_hi: "", category_id: "", base_unit_code: defaultUnit, is_loose: false, selling_price: "", cost_price: "", reorder_level: "", barcode: "" };
+  return { name: "", name_hi: "", category_id: "", base_unit_code: defaultUnit, is_loose: false, track_stock: true, aliases: "", selling_price: "", cost_price: "", reorder_level: "", barcode: "" };
 }
 
 /**
@@ -88,12 +93,14 @@ export function ProductForm({
     const reorder = parseQuantity(form.reorder_level, { allowsDecimal: unit?.allows_decimal ?? false });
     if (!reorder.ok) next.reorder_level = t(reorder.error === "decimal_not_allowed" ? "error.quantityWhole" : "error.quantity");
     if (!isValidBarcode(form.barcode.trim())) next.barcode = t("error.barcode");
+    if (!product && parseAliases(form.aliases).some((a) => a.length > 120)) next.aliases = t("error.aliasLength");
     const body: Record<string, unknown> = {
       name: form.name.trim(),
       name_hi: form.name_hi.trim() || null,
       category_id: form.category_id || null,
       base_unit_code: form.base_unit_code,
       is_loose: form.is_loose,
+      track_stock: form.track_stock,
       reorder_level: reorder.ok ? reorder.value : null,
       barcode: form.barcode.trim() || null,
     };
@@ -125,6 +132,7 @@ export function ProductForm({
         category_id: product.category_id,
         base_unit_code: product.base_unit_code,
         is_loose: product.is_loose,
+        track_stock: product.track_stock,
         reorder_level: reorder?.ok ? reorder.value : null,
         barcode: product.barcode,
       };
@@ -143,8 +151,13 @@ export function ProductForm({
         body: payload,
       });
       key.current = newIdempotencyKey();
+      const failedAliases = product ? [] : await addAliases(saved.id, parseAliases(form.aliases));
       if (!product) setForm(initialState(null, units));
-      setMessage({ kind: "success", text: t(product ? "catalog.saved" : "catalog.created") });
+      if (failedAliases.length) {
+        setMessage({ kind: "info", text: `${t("catalog.created")} ${t("catalog.aliasesFailed")} ${failedAliases.join(", ")}` });
+      } else {
+        setMessage({ kind: "success", text: t(product ? "catalog.saved" : "catalog.created") });
+      }
       onSaved(saved, !product);
     } catch (err) {
       // A 4xx leaves nothing behind, so the corrected attempt gets a new key. A network/5xx error
@@ -160,6 +173,19 @@ export function ProductForm({
     } finally {
       setSaving(false);
     }
+  }
+
+  /** Other names are added one by one after the product exists; returns the ones that failed. */
+  async function addAliases(productId: string, aliases: string[]): Promise<string[]> {
+    const failed: string[] = [];
+    for (const alias of aliases) {
+      try {
+        await apiFetch(`/catalog/products/${productId}/aliases`, { method: "POST", idempotencyKey: newIdempotencyKey(), body: { alias_text: alias } });
+      } catch {
+        failed.push(alias);
+      }
+    }
+    return failed;
   }
 
   const unitOptions = units.map((u) => ({ value: u.code, label: unitLabel(u, u.code, language) }));
@@ -195,6 +221,25 @@ export function ProductForm({
         onChange={(e) => set("is_loose", e.target.checked)}
         error={errors.is_loose}
       />
+      <CheckboxField
+        label={t("catalog.field.trackStock")}
+        hint={t("catalog.field.trackStockHint")}
+        checked={form.track_stock}
+        onChange={(e) => set("track_stock", e.target.checked)}
+        error={errors.track_stock}
+      />
+      {!product && (
+        <TextField
+          label={t("catalog.field.aliasesNew")}
+          optionalLabel={t("common.optional")}
+          hint={t("catalog.field.aliasesNewHint")}
+          value={form.aliases}
+          onChange={(e) => set("aliases", e.target.value)}
+          error={errors.aliases}
+          maxLength={400}
+          autoComplete="off"
+        />
+      )}
       {!product && (
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField

@@ -118,6 +118,7 @@ def test_product_unit_code_normalised() -> None:
         ("base_unit_code", None),
         ("category_id", "not-a-uuid"),
         ("is_loose", "yes"),
+        ("track_stock", "yes"),
         ("barcode", "890 123"),
         ("barcode", "x" * 65),
         ("reorder_level", -1),
@@ -183,7 +184,7 @@ def test_product_update_nullability() -> None:
         "reorder_level",
         "barcode",
     }
-    for field in ("name", "base_unit_code", "is_loose"):
+    for field in ("name", "base_unit_code", "is_loose", "track_stock"):
         with pytest.raises(ValidationError):
             ProductUpdate.model_validate({"version": 1, field: None})
 
@@ -254,6 +255,7 @@ def _product_row(**overrides):
         category_id=None,
         base_unit_code="kg",
         is_loose=True,
+        track_stock=True,
         selling_price_paise=4400,
         default_cost_price_paise=4000,
         reorder_level=Decimal("5.000"),

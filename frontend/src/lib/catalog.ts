@@ -37,6 +37,7 @@ export interface Product {
   category_id: string | null;
   base_unit_code: string;
   is_loose: boolean;
+  track_stock: boolean;
   selling_price_paise: number;
   /** Always null for roles without `catalog.view_costs` (the backend never sends it). */
   default_cost_price_paise: number | null;
@@ -204,6 +205,21 @@ export function changedFields<T extends Record<string, unknown>>(original: T, ne
   const out: Partial<T> = {};
   for (const key of Object.keys(next) as (keyof T)[]) {
     if (next[key] !== original[key]) out[key] = next[key];
+  }
+  return out;
+}
+
+/** "Cheeni, chini , Shakkar" -> ["Cheeni", "Shakkar"]: trimmed, blanks dropped, case-insensitive dedupe. */
+export function parseAliases(input: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of input.split(/[,\n]/)) {
+    const alias = raw.trim().replace(/\s+/g, " ");
+    const key = alias.toLocaleLowerCase();
+    if (alias && !seen.has(key)) {
+      seen.add(key);
+      out.push(alias);
+    }
   }
   return out;
 }

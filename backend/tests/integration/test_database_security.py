@@ -85,7 +85,7 @@ def test_migrations_match_models_and_are_at_head(pg) -> None:
     assert check.returncode == 0, check.stdout + check.stderr
     assert "No new upgrade operations detected" in check.stdout + check.stderr
     current = run_alembic(pg, "current")
-    assert "0003 (head)" in current.stdout + current.stderr
+    assert "0004 (head)" in current.stdout + current.stderr
 
 
 def test_every_model_table_exists(app_engine) -> None:

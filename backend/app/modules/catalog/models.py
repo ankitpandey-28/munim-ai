@@ -122,6 +122,8 @@ class Product(Base):
         String(16), ForeignKey("units.code"), nullable=False
     )
     is_loose: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # D-08: untracked products are sold normally but never create stock movements or blocks.
+    track_stock: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     selling_price_paise: Mapped[int] = paise()
     default_cost_price_paise: Mapped[int | None] = paise(nullable=True)
     reorder_level: Mapped[Decimal | None] = quantity(nullable=True)

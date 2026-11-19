@@ -60,13 +60,16 @@ Set up `munim_ai`, `munim_owner` and `munim_app` with [infra/postgres/local-setu
 ```powershell
 cd backend
 .venv\Scripts\alembic upgrade head      # runs as munim_owner; refuses any other identity
-.venv\Scripts\alembic current           # expect: 0003 (head)
+.venv\Scripts\alembic current           # expect: 0004 (head)
 ```
 
-Back up before migrating a database that holds data:
+Back up before migrating a database that holds data. Run it as the PostgreSQL superuser: the
+tables use `FORCE ROW LEVEL SECURITY`, so `munim_owner`/`munim_app` cannot dump complete data
+(pg_dump stops with "query would be affected by row-level security policy").
 
 ```powershell
-& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h 127.0.0.1 -U munim_owner -d munim_ai -Fc -f ..\backups\munim_ai_<date>.dump
+& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h 127.0.0.1 -U postgres -d munim_ai -Fc -f ..\backups\munim_ai_<date>.dump
+& "C:\Program Files\PostgreSQL\18\bin\pg_restore.exe" --list ..\backups\munim_ai_<date>.dump | Select-Object -First 5   # sanity check
 ```
 
 ### 2. Backend
