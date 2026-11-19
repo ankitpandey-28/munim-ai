@@ -18,7 +18,8 @@ Munim AI is a responsive **web application** that lets small shopkeepers manage 
 | 2.5 | Idempotency, business-transaction framework, audit log | ✅ Verified |
 | 2.6 | Frontend foundation (auth pages, shell, shops, profile, settings, i18n) | ✅ Verified (build, lint, types, unit tests, E2E) |
 | 2.7–2.8 | Integration, hardening, full test suite | ✅ Verified locally; CI not yet run |
-| 3 | Catalog, inventory, customers, udhaar/payments, sales, approvals | ⏳ Next |
+| 3a | Catalogue API: units, categories, products, search, aliases, price history ([docs/api.md](docs/api.md#catalogue-catalog)) | ✅ Verified (backend; no UI yet) |
+| 3 | Inventory, customers, udhaar/payments, sales, approvals | ⏳ Next |
 | 4 | Expenses, suppliers, purchase orders, business summary, reminders | ⏳ |
 | 5 | Voice assistant | ⏳ |
 | 6 | Pilot hardening, deployment | ⏳ |

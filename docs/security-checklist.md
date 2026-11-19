@@ -67,6 +67,18 @@ Each control lists where it's implemented and the automated evidence. "Verified"
 | S5 | Raw audio never stored (no audio column) | schema review; `voice_commands` model | ✅ |
 | S6 | Frontend holds no secrets; same-origin proxy | `BACKEND_INTERNAL_URL` is server-only; E2E through the proxy | ✅ |
 
+## Catalogue (Phase 3)
+
+| # | Control | Evidence | Status |
+|---|---|---|---|
+| C1 | Catalogue permissions: staff view-only; owner/admin full; enforced in API dependencies and the service | `test_role_access_matrix_over_http`, `test_staff_cannot_modify_anything`, `test_admin_performs_all_catalog_operations`, `test_catalog_permissions.py` | ✅ |
+| C2 | Staff never receive cost prices or cost history (filtered in SQL; `price_type=cost` → 403) | `test_staff_never_receives_cost_values`, `test_staff_sees_no_costs_and_cannot_manage` | ✅ |
+| C3 | Other shops' categories, products, aliases and price history → 404 identical to random ids; no cross-shop rows | `test_cross_shop_access_returns_404_without_leaks`, `test_cross_shop_ids_are_not_found` | ✅ |
+| C4 | No `shop_id` accepted (bodies and query) | schema tests; `test_body_shop_id_and_bad_ids_rejected`; `test_product_list_query_validation` | ✅ |
+| C5 | Append-only price history; no permanent deletion of products/categories | migration 0002 trigger + grants; `test_price_history_lifecycle`; `test_no_permanent_delete_routes` | ✅ |
+| C6 | Idempotent catalogue writes; failed requests leave no partial rows | `test_duplicate_keys_never_duplicate_rows`, `test_failed_operations_leave_no_partial_records`, `test_failed_price_update_writes_no_history` | ✅ |
+| C7 | Unique-index races mapped to clean 409s | `test_unique_index_race_is_mapped_to_conflict` (service level) | ✅ |
+
 ## Known gaps (tracked)
 
 | # | Gap | Plan |
@@ -77,3 +89,6 @@ Each control lists where it's implemented and the automated evidence. "Verified"
 | G4 | Expired idempotency keys/sessions/login attempts aren't purged yet | Worker jobs (FORCE RLS needs a context-aware purge design) |
 | G5 | CI pipeline updated but not yet executed (no GitHub repository) | Push to GitHub to run |
 | G6 | Offline Alembic (`--sql`) can't verify identity | Review rendered SQL before applying (done for 0001–0003) |
+| G7 | **Catalogue:** concurrent duplicate requests over HTTP aren't tested (covered at service level by the savepoint guard; the shared idempotency mechanism is tested concurrently over HTTP for shops) | Add a threaded HTTP test for catalogue creates |
+| G8 | **Catalogue:** audit events for *successful* operations are verified only at the service level; over HTTP only failed operations are checked (no audit rows) | Add HTTP assertions via `GET /shops/current/audit-logs` |
+| G9 | **Catalogue:** no large-volume search performance test (substring search on product names has no trigram index; aliases do) | Benchmark with thousands of products per shop; add an index migration only if needed |
