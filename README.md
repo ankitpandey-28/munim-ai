@@ -105,7 +105,7 @@ The browser talks only to `http://localhost:3000`; `/api/v1/*` is forwarded to t
 | Area | Command (from the folder shown) | What it covers |
 |---|---|---|
 | backend | `.venv\Scripts\ruff check .` and `.venv\Scripts\ruff format --check .` | lint and format |
-| backend | `.venv\Scripts\pytest` | 169 tests. Integration tests start a **disposable** PostgreSQL 18 cluster with `initdb` (never your database). Set `MUNIM_PG_BIN` if PostgreSQL isn't in `C:\Program Files\PostgreSQL\18\bin` |
+| backend | `.venv\Scripts\pytest` | 365 tests. Integration tests start a **disposable** PostgreSQL 18 cluster with `initdb` (never your database). Set `MUNIM_PG_BIN` if PostgreSQL isn't in `C:\Program Files\PostgreSQL\18\bin` |
 | frontend | `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` | ESLint, TypeScript, Vitest (23 tests), production build |
 
 Verify the database roles any time with [infra/postgres/verify-roles.sql](infra/postgres/verify-roles.sql) (as `munim_app`) and `alembic check`.
